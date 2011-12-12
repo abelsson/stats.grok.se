@@ -23,7 +23,7 @@
 #include <algorithm>
 #include <queue>
 #include <iterator>
-
+#include <cstring>
 #include "qunit.h"
 
 /**
