@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!-- All of the CSS and layout came from an example at http://meyerweb.com/eric/css/edge/bargraph/demo.html. -->
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<title>Wikipedia article traffic statistics</title>
+
+<link rel=stylesheet type="text/css" media="screen"
+	href="/static/css/wikistats.css">
+</head>
+<body>
+	<h3>Frequent questions</h3>
+	<div style="margin: 25px 0 10px 0;">
+		<b>Q:</b> What does the stats measure?
+	</div>
+	<div style="margin-left: 10px">
+		<b>A:</b> Page views.
+	</div>
+
+	<div style="margin: 25px 0 10px 0;">
+		<b>Q:</b> Where does the data come from?
+	</div>
+	<div style="margin-left: 10px">
+		<b>A:</b> <a href="http://dammit.lt">Domas Mituzas</a> put together a
+		system to gather access statistics from wikipedia\'s squid cluster and
+		publishes it <a href="http://dammit.lt/wikistats/">here</a>. This site
+		is a mere visualizer of that data.
+	</div>
+	<div style="margin: 25px 0 10px 0;">
+		<b>Q:</b> What is the logic for redirects and when a page gets moved
+		do the stats move?
+	</div>
+	<div style="margin-left: 10px">
+		<b>A:</b> It counts the title the page was accessed under, so
+		redirects and moves will unfortunately split the statistics across two
+		different statistics pages.
+	</div>
+
+	<div style="margin: 25px 0 10px 0;">
+		<b>Q:</b>Is the data reliable?
+	</div>
+	<div style="margin-left: 10px">
+		<b>A:</b> It is easily susceptible to deliberate attacks and
+		manipulations, but for most articles it should give a fair view of the
+		number of views. I wouldn\'t base any important decisions on these
+		stats.
+	</div>
+	<div style="margin: 25px 0 10px 0;">
+		<b>Q:</b>I have another question or comment!
+	</div>
+	<div style="margin-left: 10px">
+		<b>A:</b> They should be directed at <a
+			href="http://en.wikipedia.org/wiki/User:Henrik">User:Henrik</a> on
+		wikipedia.
+	</div>
+
+</body>
+</html>

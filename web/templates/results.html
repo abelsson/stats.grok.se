@@ -1,0 +1,67 @@
+$def with (counts, max_count, total_hits_html, dt, form)
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!-- All of the CSS and layout came from an example at http://meyerweb.com/eric/css/edge/bargraph/demo.html. -->
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<title>Wikipedia article traffic statistics</title>
+
+<link rel=stylesheet type="text/css" media="screen"
+	href="/static/css/wikistats.css">
+</head>
+<body>
+
+$:total_hits_html
+
+<ul id="q-graph">
+	$code:
+		foo = 0 
+		ssum = 0
+		x = 0
+		
+		def humround(n):
+		    if n < 1000:
+		        return "%.0f" % n
+		    if n < 1000000:
+		        return "%.1fk" % (n/1000.0)
+		    if n < 1000000000:
+		        return "%.1fM" % (n/1000000.0)
+
+	$for i in range(0,31):
+		<li class="qtr" style="width: 25px; left: $i*20px;">$i</li>
+
+	$for count in counts: 
+		$#count = counts.get(i+1,0)
+		<li class="sent bar" style="height:$count/$max_count)*280px; left: $foopx;">
+			<p	style="margin-left: -3px;">$humround(count)</p>
+		</li>
+		$foo += 20 
+		$ssum += int($count)
+
+	<li id="ticks">
+	$for i in range(5,0,-1): 
+		<div class="tick" style="height: 59px;">
+			$x = ($max_count/5*$i)*1.071)
+			<p>$humround(x)</p>
+		</div>
+	</li>
+</ul>
+
+<form method="post" action="/">
+$:form.render()
+<input type="submit" value="Go"/>
+</form>
+
+<div style="float: right">
+<a class="FlattrButton" style="display:none;" rev="flattr;button:compact;" href="http://stats.grok.se"></a>
+</div>
+
+<p style="font-size: 0.7em">This is very much a beta service and may disappear or change at any time. Questions or comments should go to <a href="http://en.wikipedia.org/wiki/User:Henrik">User:Henrik</a></p>
+<p style="font-size: 0.6em">(took $dt sec)</p>
+
+</body>
+</html>

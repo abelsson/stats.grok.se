@@ -1,0 +1,29 @@
+$def with (form)
+
+<p>
+	What do Wikipedia's readers care about? Is <a
+		href="/en/200712/Britney_Spears">Britney Spears</a> more popular than
+	<a href="/en/200712/Brittany">Brittany</a>? Is <a
+		href="/en/200712/Asia_Carrera">Asia Carrera</a> more popular than <a
+		href="/en/200712/Asia">Asia</a>? How many people looked at the article
+	on <a href="/en/200712/Santa_Claus">Santa Claus</a> in December? How
+	many looked at the article on <a href="/en/200712/Ron_Paul">Ron
+		Paul</a>?
+</p>
+
+<p>
+	What can <i>you</i> find?
+</p>
+
+<div
+	style="width: 600px; margin: 20px auto; padding: 30px 0px; text-align: center; background-color: #eee;">
+	<form method="post" action="/">
+		<p>
+			Enter a wikipedia article title and press Go<br />
+
+			$:form.render()
+			<input type="submit" value="Go"/>
+		</p>
+	</form>
+</div>
+
