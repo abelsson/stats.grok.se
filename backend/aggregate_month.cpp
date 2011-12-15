@@ -25,7 +25,9 @@
 #include <queue>
 #include <iterator>
 
+#ifdef TESTING
 #include "qunit.h"
+#endif
 
 /**
  * A buffer in which lines can be peeked or consumed.
