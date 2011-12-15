@@ -32,21 +32,21 @@ $:total_hits_html
 		        return "%.1fM" % (n/1000000.0)
 
 	$for i in range(0,31):
-		<li class="qtr" style="width: 25px; left: $i*20px;">$i</li>
+		<li class="qtr" style="width: 25px; left: ${i*20}px;">$i</li>
 
 	$for count in counts: 
 		$#count = counts.get(i+1,0)
-		<li class="sent bar" style="height:$count/$max_count)*280px; left: $foopx;">
-			<p	style="margin-left: -3px;">$humround(count)</p>
+		<li class="sent bar" style="height:${(count/max_count)*280}px; left: ${foo}px;">
+			<p	style="margin-left: -3px;">${humround(count)}</p>
 		</li>
-		$foo += 20 
-		$ssum += int($count)
+		$ foo += 20
+		$ ssum += int(count)
 
 	<li id="ticks">
 	$for i in range(5,0,-1): 
 		<div class="tick" style="height: 59px;">
-			$x = ($max_count/5*$i)*1.071)
-			<p>$humround(x)</p>
+			$ x = (max_count/5*i)*1.071
+			<p>${humround(x)}</p>
 		</div>
 	</li>
 </ul>

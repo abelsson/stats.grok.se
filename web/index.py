@@ -18,7 +18,7 @@ import urllib
 import datetime
 
 from time import time
-
+import config
 import web
 from web import form
 
@@ -119,8 +119,7 @@ PROJECTS = [(key, value) for value, key in PROJECTS]
 class base(object):
     def __init__(self, *args, **kwargs):
         super(base, self).__init__(*args, **kwargs)
-        self.db = web.database(dbn='mysql', user='wikistats_reader', pw='wikistats', db='wikistats')   
-
+        self.db = web.database(dbn='mysql', host= config.db_host, user= config.db_user , pw=config.db_password, db='wikistats')
 class about:
     def GET(self):
         render = web.template.render('templates/')
@@ -152,7 +151,7 @@ class index(base):
                 render = web.template.render('templates/', base='index')
                 return render.form(form)
         else:
-            self.POST(proj, year, page)
+            return self.POST(proj, year, page)
             
     def POST(self,  proj=None, year=None, page=None):
         search = web.input()
@@ -170,7 +169,7 @@ class index(base):
             #form =  self.init_form()
             #return render.form(form)
             return render.results(counts, maxcount, total_hits_html, dt, form)
-    
+
     def results_overview(self, counts, proj, rank, date, page):
         cvt = { "commons.m" : "commons.wikimedia.org",
                "en.n" : "en.wikinews.org",
@@ -267,14 +266,14 @@ def getalldays(c,date):
     rows = c.query("SHOW TABLES like 'pagecounts_%s__';" % date)
     #c.execute("SHOW TABLES like 'pagecounts_%s__';" % date)
     #rows = c.fetchall()
-    all_days = [x[0] for x in rows]
+    all_days = [x.values()[0] for x in rows]
     return all_days
 
 def getalldays_new(c,date):
     #c.execute("SHOW TABLES like 'pagecounts_%s';" % date)
     rows =c.query("SHOW TABLES like 'pagecounts_%s';" % date)
     #rows = c.fetchall()
-    all_days = [x[0] for x in rows]
+    all_days = [x.values()[0] for x in rows]
     return all_days
 
 
@@ -282,13 +281,13 @@ def getcounts(c,date,proj,page):
     all_days = getalldays(c,date)
     counts = {}
     for day in all_days:
-        count = c.query("SELECT sum(hitcount) FROM "+day+" WHERE page=%s AND project=%s;", (page,proj))
+        count = c.query("SELECT sum(hitcount) FROM "+day+" WHERE page=$page AND project=$project;", vars = {'page' : page, 'project' : proj })
         #c.execute("SELECT sum(hitcount) FROM "+day+" WHERE page=%s AND project=%s;", (page,proj))
         #count = c.fetchone()[0]
         if count == None:
             count = 0
         day = int(day.split("_")[1][-2:])
-        counts[day] = int(count)
+        counts[day] = int(count[0].values()[0])
 
     return counts
 
