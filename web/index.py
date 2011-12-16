@@ -29,7 +29,7 @@ urls = (
 '/([a-z]*)/([0-9]{6})/(.*)', 'result',
 '/([a-z]*)/latest/(.*)', 'latest_result',
 '/([a-z]*)/top', 'latest_top',
-
+'/.*', 'notfound'
 )
 
 app = web.application(urls, globals())
@@ -118,7 +118,12 @@ PROJECTS = [("en","English"),
 class base(object):
     def __init__(self, *args, **kwargs):
         super(base, self).__init__(*args, **kwargs)
-        
+
+class notfound:
+    def GET(self):
+        return web.notfound()
+
+
 class about:
     def GET(self):
         render = web.template.render('templates/')
