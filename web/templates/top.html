@@ -1,18 +1,5 @@
 $def with (rows, LATESTTOP)
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<!-- All of the CSS and layout came from an example at http://meyerweb.com/eric/css/edge/bargraph/demo.html. -->
-
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<title>Wikipedia article traffic statistics</title>
-
-<link rel=stylesheet type="text/css" media="screen"
-	href="/static/css/wikistats.css">
-</head>
-<body>
 <p>Most viewed articles in $LATESTTOP</p>
 <table>
 	<tr>
@@ -21,16 +8,12 @@ $def with (rows, LATESTTOP)
 		<th>Page views</th>
 	</tr>
 
-	num = 0 
 	$for i in rows: 
-		($rank,$proj,$page,$hitcount) = i
 	<tr>
-		<td>rank</td>
-		<td><a href="http://stats.grok.se/$proj/%LATESTTOP/%page">urllib.unquote(page).replace("_","")</a></td>
-		<td>$hitcount</td>
+		<td>${i.rank}</td>
+		<td><a href="http://stats.grok.se/${i.project}/$LATESTTOP/${i.page}">${unquote(i.page).replace("_"," ")}</a></td>
+		<td>${i.hitcount}</td>
 	</tr>
 
 
 </table>
-</body>
-</html>

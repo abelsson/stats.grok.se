@@ -1,39 +1,5 @@
 $def with (form)
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<!-- All of the CSS and layout came from an example at http://meyerweb.com/eric/css/edge/bargraph/demo.html. -->
-
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<title>Wikipedia article traffic statistics</title>
-
-<link rel=stylesheet type="text/css" media="screen" href="static/css/wikistats.css">
-
-<script type="text/javascript">
-	function sf() {
-		document.getElementById("ib1").focus();
-	}
-</script>
-
-<script type="text/javascript">
-	/*           */
-	(function() {
-		var s = document.createElement('script'), t = document
-				.getElementsByTagName('script')[0];
-
-		s.type = 'text/javascript';
-		s.async = true;
-		s.src = 'http://api.flattr.com/js/0.6/load.js?mode=auto';
-
-		t.parentNode.insertBefore(s, t);
-	})();
-	/*     */
-</script>
-</head>
-
-<body onLoad="sf();">
 	<h2>Wikipedia article traffic statistics</h2>
 
 	$:form
@@ -58,5 +24,3 @@ $def with (form)
 		time.
 	</p>
 
-</body>
-</html>
