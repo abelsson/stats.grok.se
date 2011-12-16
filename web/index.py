@@ -16,8 +16,8 @@
 
 import urllib
 import datetime
-
 from time import time
+
 import config
 import web
 from web import form
@@ -26,7 +26,7 @@ urls = (
 '/', 'index',
 '/top', 'top',
 '/about', 'about',
-'/([a-z]*)/([0-9]{6})/(.*)', 'index',
+'/([a-z]*)/([0-9]{6})/(.*)', 'result',
 )
 
 app = web.application(urls, globals())
@@ -115,7 +115,6 @@ PROJECTS = [("English","en"),
 
 PROJECTS = [(key, value) for value, key in PROJECTS]
 
-
 class base(object):
     def __init__(self, *args, **kwargs):
         super(base, self).__init__(*args, **kwargs)
@@ -133,43 +132,58 @@ class top(base):
         return render.top(rows, LATESTTOP)
 
 class index(base):
-    def init_form(self):
+    def init_form(self, prevform=None):
         years, latest = getdates()
-        search = form.Form(
-        form.Dropdown('proj', PROJECTS, value=latest, description=''),
-        form.Dropdown('year', years, description=''),
-        form.Textbox('inputbox',form.notnull,id='ib1', description=''),
-        form.Button('Top'))
+        if not prevform:
+            search = form.Form(
+            form.Dropdown('proj', PROJECTS, value=latest, description=''),
+            form.Dropdown('year', years, description=''),
+            form.Textbox('inputbox',form.notnull,id='ib1', description=''),
+            form.Button('Top'))
+        else:
+            search = form.Form(
+            form.Dropdown('proj', PROJECTS, value=prevform['proj'], description=''),
+            form.Dropdown('year', years, value=prevform['year'], description=''),
+            form.Textbox('inputbox', form.notnull,value=prevform['inputbox'],id='ib1', description=''),
+            form.Button('Top'))
         return search
     
-    def GET(self, proj=None, year=None, page=None):
-        #search = self.init_form()
-        #render = web.template.render('templates/', base='index')
-        #return render.form(search)
+    def GET(self):
         form =  self.init_form()
-        if not proj:
-                render = web.template.render('templates/', base='index')
-                return render.form(form)
-        else:
-            return self.POST(proj, year, page)
-            
-    def POST(self,  proj=None, year=None, page=None):
-        search = web.input()
         render = web.template.render('templates/', base='index')
-        if not search:
-            search =dict(proj=proj, year=year, inputbox=page)
+        return render.form(form)
         
-        form =  self.init_form()
+    def POST(self): 
+        search = web.input()       
+        return web.redirect('/%s/%s/%s' % (search['proj'], search['year'], search['inputbox']))
+    
+  
+
+class result(base): 
+    def GET(self,proj=None, year=None, page=None):
+        render = web.template.render('templates/', base='index')
+        search =dict(proj=proj, year=year, inputbox=page)
+        idx =index()
+        form =  idx.init_form(search)
+
+        
         if not form.validates(form):
             return render.form(form)
+        elif self.block_scraper()==True:
+            return render.blocked()
         else:
             counts, maxcount, rank, date, dt = self.fetch_results(search)
             total_hits_html = self.results_overview(counts, search['proj'], rank, date, search['inputbox'])
-            print counts, maxcount, total_hits_html, dt, form
-            #form =  self.init_form()
-            #return render.form(form)
+            #print counts, maxcount, total_hits_html, dt, form
             return render.results(counts, maxcount, total_hits_html, dt, form)
 
+    def block_scraper(self):
+        scrapers = {'147.46.178.146':True,
+                    '63.196.132.64':True,
+                    '129.110.5.91':True}
+        return scrapers.get(web.ctx['ip'],False)
+        
+    
     def results_overview(self, counts, proj, rank, date, page):
         cvt = { "commons.m" : "commons.wikimedia.org",
                "en.n" : "en.wikinews.org",
@@ -284,10 +298,12 @@ def getcounts(c,date,proj,page):
         count = c.query("SELECT sum(hitcount) FROM "+day+" WHERE page=$page AND project=$project;", vars = {'page' : page, 'project' : proj })
         #c.execute("SELECT sum(hitcount) FROM "+day+" WHERE page=%s AND project=%s;", (page,proj))
         #count = c.fetchone()[0]
-        if count == None:
-            count = 0
         day = int(day.split("_")[1][-2:])
-        counts[day] = int(count[0].values()[0])
+        #print dir(count)
+        try:
+            counts[day] = int(count[0].values()[0])
+        except TypeError:
+            counts[day] = 0
 
     return counts
 
@@ -321,67 +337,7 @@ def getcounts_new(c,date,proj,page):
 
     return counts
 
-
-def handler(req):
-    global conn
-    if conn == None:
-        conn = mysqlconn("wikistats")
-    req.content_type = 'text/html'
-
-
-    if req.connection.remote_ip == "147.46.178.146" or req.connection.remote_ip == "63.196.132.64" or req.connection.remote_ip == "129.110.5.91":
-        req.write("Hello you! Your scraping speed is making the site sluggish and causing problems. Would you consider using the raw dumps at http://dammit.lt/wikistats instead, or limit your requests to something reasonable (1-2 per second). If you have any questions, please post a note at my wikipedia user page (http://en.wikipedia.org/wiki/User:Henrik). \n")
-        return apache.OK
-
-      
-        req.write(HEADER_TEXT)
-
-        req.write('''
-
-        <h3>Frequent questions</h3>
-        <div style="margin: 25px 0 10px 0;"><b>Q:</b> What does the stats measure?</div>
-        <div style="margin-left: 10px"><b>A:</b> Page views.</div>
-
-        <div style="margin: 25px 0 10px 0;"><b>Q:</b> Where does the data come from?</div>
-        <div style="margin-left: 10px"><b>A:</b> <a href="http://dammit.lt">Domas Mituzas</a> put together a system to gather access statistics from wikipedia\'s squid cluster and publishes it <a href="http://dammit.lt/wikistats/">here</a>. This site is a mere visualizer of that data.</div>
-        <div style="margin: 25px 0 10px 0;"><b>Q:</b> What is the logic for redirects and when a page gets moved do the stats move?</div>
-        <div style="margin-left: 10px"><b>A:</b> It counts the title the page was accessed under, so redirects and moves will unfortunately split the statistics across two different statistics pages. </div>
-
-        <div style="margin: 25px 0 10px 0;"><b>Q:</b>Is the data reliable?</div>
-        <div style="margin-left: 10px"><b>A:</b> It is easily susceptible to deliberate attacks and manipulations, but for most articles it should give a fair view of the number of views. I wouldn\'t base any important decisions on these stats. </div>
-        <div style="margin: 25px 0 10px 0;"><b>Q:</b>I have another question or comment!</div>
-        <div style="margin-left: 10px"><b>A:</b>
-        They should be directed at <a href="http://en.wikipedia.org/wiki/User:Henrik">User:Henrik</a> on wikipedia.
-        </div>
-        ''')
-        return apache.OK
-    
-    if len(req.uri.split('/')) == 3 and req.uri[-4:] == "/top":
-        print_top(req)
-        return apache.OK
-
-    if req.uri == "/":
-        form = util.FieldStorage(req,keep_blank_values=1)
-        inputbox = form.get("inputbox",None)
-        year = form.get("year","200712")
-        proj = form.get("proj","en")
-        act = form.get("button","bla")
-
-        if act=="Top":
-            req.headers_out['location'] = '/'+proj+'/top'
-            req.status = apache.HTTP_MOVED_TEMPORARILY
-            req.send_http_header()
-            return apache.HTTP_MOVED_TEMPORARILY
-
-        if inputbox != None:
-            req.headers_out['location'] = '/'+proj+'/'+year+'/'+urllib.quote(inputbox)
-            req.status = apache.HTTP_MOVED_TEMPORARILY
-            req.send_http_header()
-            return apache.HTTP_MOVED_TEMPORARILY
-
-        
-
 if __name__ == '__main__':
-    MONTHS, LATESTMONTH = getdates()
-    app.run()
+    if config.DEBUG:
+        app.run()
     
