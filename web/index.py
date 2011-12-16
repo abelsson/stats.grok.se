@@ -27,6 +27,7 @@ urls = (
 '/top', 'top',
 '/about', 'about',
 '/([a-z]*)/([0-9]{6})/(.*)', 'result',
+'/.*', 'notfound'
 )
 
 app = web.application(urls, globals())
@@ -119,6 +120,12 @@ class base(object):
     def __init__(self, *args, **kwargs):
         super(base, self).__init__(*args, **kwargs)
         self.db = web.database(dbn='mysql', host= config.db_host, user= config.db_user , pw=config.db_password, db='wikistats')
+
+class notfound:
+    def GET(self):
+        return web.notfound()
+
+
 class about:
     def GET(self):
         render = web.template.render('templates/')
