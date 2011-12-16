@@ -32,9 +32,6 @@ urls = (
 '/.*', 'notfound'
 )
 
-app = web.application(urls, globals())
-
-
 PROJECTS = [("en","English"),
             ("de","German"),
             ("fr","French"),
@@ -233,6 +230,11 @@ class latest_result(result):
 
     
 if __name__ == '__main__':
+    app = web.application(urls, globals())
+    
     if config.DEBUG:
         app.run()
+    else:
+        app = web.application(urls, globals(), autoreload=False)
+        application = app.wsgifunc()
     
