@@ -26,189 +26,97 @@ import model
 urls = (
 '/', 'index',
 '/about', 'about',
-'/([a-z]*)/([0-9]{6})/(.*)', 'result',
-'/([a-z]*)/latest/(.*)', 'latest_result',
-'/([a-z]*)/top', 'latest_top',
+'/([a-z.-]*)/([0-9]{6})/(.*)', 'result',
+'/([a-z.-]*)/latest/(.*)', 'latest_result',
+'/([a-z.-]*)/top', 'latest_top',
 '/.*', 'notfound'
 )
-
-PROJECTS = [("en","English"),
-            ("de","German"),
-            ("fr","French"),
-            ("pl","Polish"),
-            ("ja","Japanese"),
-            ("it","Italian"),
-            ("nl","Dutch"),
-            ("pt","Portuguese"),
-            ("es","Spanish"),
-            ("sv","Swedish"),
-            ("ru","Russian"),
-            ("zh","Chinese"),
-            ("zh-classical","Chinese (classical)"),
-            ("no","Norwegian"),
-            ("fi","Finnish"),
-            ("vo","Volapük"),
-            ("ca","Catalan"),
-            ("ro","Romanian"),
-            ("tr","Turkish"),
-            ("uk","Ukrainian"),
-            ("eo","Esperanto"),
-            ("cs","Czech"),
-            ("hu","Hungarian"),
-            ("sk","Slovak"),
-            ("da","Danish"),
-            ("id","Indonesian"),
-            ("he","Hebrew"),
-            ("lt","Lithuanian"),
-            ("sr","Serbian"),
-            ("sl","Slovenian"),
-            ("ar","Arabic"),
-            ("ko","Korean"),
-            ("bg","Bulgarian"),
-            ("et","Estonian"),
-            ("new","Newar / Nepal Bhasa"),
-            ("hr","Croatian"),
-            ("te","Telugu"),
-            ("ceb","Cebuano"),
-            ("gl","Galician"),
-            ("th","Thai"),
-            ("el","Greek"),
-            ("fa","Persian"),
-            ("vi","Vietnamese"),
-            ("nn","Norwegian (Nynorsk)"),
-            ("ms","Malay"),
-            ("simple","Simple English"),
-            ("eu","Basque"),
-            ("bpy","Bishnupriya Manipuri"),
-            ("bs","Bosnian"),
-            ("lb","Luxembourgish"),
-            ("ka","Georgian"),
-            ("is","Icelandic"),
-            ("sq","Albanian"),
-            ("br","Breton"),
-            ("la","Latin"),
-            ("az","Azeri"),
-            ("bn","Bengali"),
-            ("hi","Hindi"),
-            ("mr","Marathi"),
-            ("tl","Tagalog"),
-            ("mk","Macedonian"),
-            ("sh","Serbo-Croatian"),
-            ("io","Ido"),
-            ("cy","Welsh"),
-            ("pms","Piedmontese"),
-            ("su","Sundanese"),
-            ("lv","Latvian"),
-            ("ta","Tamil"),
-            ("nap","Neapolitan"),
-            ("jv","Javanese"),
-            ("ht","Haitian"),
-            ("Low nds","Saxon"),
-            ("scn","Sicilian"),
-            ("oc","Occitan"),
-            ("ast","Asturian"),
-            ("ku","Kurdish"),
-            ("hy", "Armenian"),
-            ("commons.m","Commons"),
-            ("meta.m","Meta")]
 
 class base(object):
     def __init__(self, *args, **kwargs):
         super(base, self).__init__(*args, **kwargs)
+        self.render = web.template.render('templates/', base = 'layout',
+                                          globals = { 'unquote' : urllib.unquote,
+                                                      'sum' : sum,
+                                                      'project_link' : project_link})
 
-class notfound:
-    def GET(self):
-        return web.notfound()
-
-class about:
-    def GET(self):
-        render = web.template.render('templates/')
-        return render.about()
-
-class latest_top(base):
-    def GET(self, proj=None):
-        rows = model.get_top(proj)
-        render = web.template.render('templates/', base = 'layout', globals = { 'unquote' : urllib.unquote })
-        return render.top(rows, config.LATESTTOP)
-
-class index(base):
-    def init_form(self, prevform=None):
+    def init_form(self, proj = None, date = None, page = None):
         years, latest = model.get_dates()
-        if not prevform:
+
+        if proj == None:
             search = form.Form(
-            form.Dropdown('proj', PROJECTS, value=latest, description=''),
-            form.Dropdown('year', years, description=''),
+            form.Dropdown('proj', config.PROJECTS, description=''),
+            form.Dropdown('year', years, value=latest, description=''),
             form.Textbox('inputbox',form.notnull,id='ib1', description=''),
             form.Button('Top'))
         else:
             search = form.Form(
-            form.Dropdown('proj', PROJECTS, value=prevform['proj'], description=''),
-            form.Dropdown('year', years, value=prevform['year'], description=''),
-            form.Textbox('inputbox', form.notnull,value=prevform['inputbox'],id='ib1', description=''),
+            form.Dropdown('proj', config.PROJECTS, value=proj, description=''),
+            form.Dropdown('year', years, value=date, description=''),
+            form.Textbox('inputbox', form.notnull,value=page, id='ib1', description=''),
             form.Button('Top'))
+            
         return search
+
+
+class notfound:
+    def GET(self):
+        return web.notfound()
     
+#
+# About page
+#
+class about(base):
+    def GET(self):
+        return self.render.about()
+
+#
+# Top 1000 viewed articles page
+#
+class latest_top(base):
+    def GET(self, proj=None):
+        rows = model.get_top(proj)
+        return self.render.top(rows, config.LATESTTOP)
+
+#
+# Index page
+#
+class index(base):
     def GET(self):
         form =  self.init_form()
         render = web.template.render('templates/', base='layout')
-        return render.form(form)
+        return self.render.index(form)
         
     def POST(self): 
         search = web.input()       
+
+        # Top button clicked?
+        if search.get('Top') != None:
+            return web.redirect('/%s/top' % search['proj'])
+
+        # Nope, regular search
         return web.redirect('/%s/%s/%s' % (search['proj'], search['year'], search['inputbox']))
     
-    
+#
+# Statistics for a single page for a given month
+#
 class result(base): 
-    def GET(self,proj=None, year=None, page=None):
-        render = web.template.render('templates/', base='layout')
-        search = dict(proj=proj, year=year, inputbox=page)
-        idx =index()
-        form =  idx.init_form(search)
+    def GET(self,proj=None, date=None, page=None):
 
-        
-        if not form.validates(form):
-            return render.form(form)
-        elif self.block_scraper()==True:
-            return render.blocked()
-        else:
-            counts, maxcount, rank, date, dt = self.fetch_results(search)
-            total_hits_html = self.results_overview(counts, search['proj'], rank, date, search['inputbox'])
-            #print counts, maxcount, total_hits_html, dt, form
-            return render.results(counts, maxcount, total_hits_html, dt, form)
+        if self.block_scraper():
+            return self.render.blocked()
+
+        form = self.init_form(proj, date, page)
+
+        counts, rank, execution_time = self.fetch_results(proj, date, page)
+        return self.render.results(counts, page, proj, date, rank, execution_time, form)
 
     def block_scraper(self):
-        scrapers = {'147.46.178.146':True,
-                    '63.196.132.64':True,
-                    '129.110.5.91':True}
-        return scrapers.get(web.ctx['ip'],False)
-        
+        return web.ctx['ip'] in config.blocked_users    
     
-    def results_overview(self, counts, proj, rank, date, page):
-        cvt = { "commons.m" : "commons.wikimedia.org",
-               "en.n" : "en.wikinews.org",
-               "sv.s" : "sv.wikisource.org"}
-        try:
-            proj = cvt[proj]
-        except KeyError:
-            proj = proj + ".wikipedia.org"
     
-        total = sum(counts)
-        total_hits_html ='<p><a href="http://%s/wiki/%s">%s</a> has been viewed' % (proj, urllib.quote_plus(page), page)
-        if date == -1:
-            total_hits_html = '%s %s times in the last 30 days.' % (total_hits_html, total)
-        else:
-            total_hits_html ='%s %s times in %s.' % (total_hits_html, total ,date) 
-        
-        if rank.c > 0:
-            total_hits_html = '%s This article ranked %s in traffic on %s.' % (total_hits_html, rank,proj)
-        
-        return total_hits_html
-    
-    def fetch_results(self, search):
+    def fetch_results(self, proj, date, page):
         today = datetime.date.today()
-        page = search['inputbox']
-        date = search['year']
-        proj = search['proj']
         page = urllib.unquote(page).strip().replace(" ","_")
 
         rank = model.get_rank(page, proj)
@@ -217,18 +125,38 @@ class result(base):
             page_counts, execution_time = model.get_latest_stats(page,proj)
         else:
             page_counts, execution_time = model.get_monthly_stats(page,date,proj)
-        
 
-        max_count = max(float(max(page_counts)), 1)
+        return page_counts, rank, execution_time
 
-        return page_counts, max_count, rank, date, execution_time
-
-# XXX: Hack to support latest 30 days view, rewrite to be prettier.
+#
+# Statistics for a single page for the latest 30 days
+#
+# XXX: rewrite to be prettier and less hack-y.
+#
 class latest_result(result):
     def GET(self,proj=None, page=None):
         return result.GET(self, proj, 'latest', page)
 
+
+
+#
+# Utility functions
+#
     
+def project_link(proj):
+    ''' Return the dns host name for a given project '''
+    if proj.endswith(".s"):
+        return proj[:-2] + ".wikisource.org"
+
+    if proj.endswith(".n"):
+        return proj[:-2] + ".wikinews.org"
+
+    if proj.endswith(".m"):
+        return proj[:-2] + ".wikimedia.org"
+
+    return proj + ".wikipedia.org"
+
+
 if __name__ == '__main__':
     app = web.application(urls, globals())
     

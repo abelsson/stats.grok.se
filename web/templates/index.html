@@ -1,26 +1,41 @@
 $def with (form)
 
-	<h2>Wikipedia article traffic statistics</h2>
 
-	$:form
+<p>
+	What do Wikipedia's readers care about? Is <a
+		href="/en/200712/Britney_Spears">Britney Spears</a> more popular than
+	<a href="/en/200712/Brittany">Brittany</a>? Is <a
+		href="/en/200712/Asia_Carrera">Asia Carrera</a> more popular than <a
+		href="/en/200712/Asia">Asia</a>? How many people looked at the article
+	on <a href="/en/200712/Santa_Claus">Santa Claus</a> in December? How
+	many looked at the article on <a href="/en/200712/Ron_Paul">Ron
+		Paul</a>?
+</p>
 
-	<h5>News:</h5>
-	<ul>
-		<li>2008-02-29: Non-English statistics added (available from
-			February)</li>
-		<li>2008-03-05: Added <a href="/en/top">top list</a> for English
-			Wikipedia. Other projects will be added soon.
-		</li>
-		<li>2008-03-19: Top 1000 articles in February for all projects.
-		</li>
-	</ul>
+<p>
+	What can <i>you</i> find?
+</p>
+
+<div
+	style="width: 600px; margin: 20px auto; padding: 30px 0px; text-align: center; background-color: #eee;">
+	<form method="post" action="/">
+		<p>
+			Enter a wikipedia article title and press Go<br />
+
+			$:form.render()
+			<input type="submit" value="Go"/>
+		</p>
+	</form>
+</div>
 
 
-
-	<p style="font-size: 0.7em">
-		<a href="/about">About these stats</a>. The raw data is available <a
-			href="http://dumps.wikimedia.org/other/pagecounts-raw/">here</a>.
-		This is very much a beta service and may disappear or change at any
-		time.
-	</p>
-
+<h5>News:</h5>
+<ul>
+  <li>2008-02-29: Non-English statistics added (available from
+  February)</li>
+  <li>2008-03-05: Added <a href="/en/top">top list</a> for English
+  Wikipedia. Other projects will be added soon.
+  </li>
+  <li>2008-03-19: Top 1000 articles in February for all projects.
+  </li>
+</ul>

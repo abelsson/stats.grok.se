@@ -1,13 +1,26 @@
-$def with (counts, max_count, total_hits_html, dt, form)
+$def with (counts, page, proj, date, rank, render_time, form)
+    
+$ total = sum(counts.values())
+$ max_count = max(float(max(counts.values())), 1)
+$ link = project_link(proj)
 
-$:total_hits_html
+<!--  urllib.quote_plus(page) -->
+<p><a href="http://$link/wiki/$page">$page</a> has been viewed $total
 
+$if date == -1:
+     times in the last 30 days.
+$else:
+     times in $date.
+     
+$if rank > 0:
+     This article ranked $rank in traffic on $proj.
+
+   
+</p>
 <ul id="q-graph">
 	$code:
-		foo = 0 
-		ssum = 0
-		x = 0
-		
+		x_offset = 0 
+
 		def humround(n):
 		    if n < 1000:
 		        return "%.0f" % n
@@ -16,16 +29,14 @@ $:total_hits_html
 		    if n < 1000000000:
 		        return "%.1fM" % (n/1000000.0)
 
-	$for i in range(0,31):
-		<li class="qtr" style="width: 25px; left: ${i*20}px;">$i</li>
+	$for i in range(1,32):
+		<li class="qtr" style="width: 25px; left: ${(i-1)*20}px;">$i</li>
 
-	$for count in counts: 
-		$#count = counts.get(i+1,0)
-		<li class="sent bar" style="height:${(count/max_count)*280}px; left: ${foo}px;">
+		$ count = int(counts.get(i,0))
+		<li class="sent bar" style="height:${(count/max_count)*280}px; left: ${x_offset}px;">
 			<p	style="margin-left: -3px;">${humround(count)}</p>
 		</li>
-		$ foo += 20
-		$ ssum += int(count)
+		$ x_offset += 20
 
 	<li id="ticks">
 	$for i in range(5,0,-1): 
@@ -45,5 +56,4 @@ $:form.render()
 <a class="FlattrButton" style="display:none;" rev="flattr;button:compact;" href="http://stats.grok.se"></a>
 </div>
 
-<p style="font-size: 0.7em">This is very much a beta service and may disappear or change at any time. Questions or comments should go to <a href="http://en.wikipedia.org/wiki/User:Henrik">User:Henrik</a></p>
-<p style="font-size: 0.6em">(took $dt sec)</p>
+<p style="font-size: 0.6em">(took $render_time sec)</p>

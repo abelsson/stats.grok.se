@@ -3,6 +3,13 @@ import web
 import config
 
 
+class OldFormatException(Exception):
+    def __init__(self, value = "Old format"):
+        self.value = value
+
+        def __str__(self):
+            return repr(self.value)
+
 db = web.database(dbn='mysql', host=config.db_host, user= config.db_user , pw=config.db_password, db='wikistats')
 
 
@@ -64,9 +71,9 @@ def get_monthly_stats(page, date, proj):
     start = time.time()
 
     try:
-        page_counts = _getcounts_new(db,date,proj,page).values()
-    except:
-        page_counts = _getcounts(db,date,proj,page).values()   
+        page_counts = _getcounts_new(db,date,proj,page)
+    except OldFormatException:
+        page_counts = _getcounts(db,date,proj,page)   
 
     end = time.time()
     execution_time = end-start
@@ -95,7 +102,7 @@ def _getcounts(c,date,proj,page):
             counts[day] = int(count[0].values()[0])
         except TypeError:
             counts[day] = 0
-
+            
     return counts
 
 def _getcounts_new(c,date,proj,page):
@@ -106,10 +113,9 @@ def _getcounts_new(c,date,proj,page):
         counts[i]=0
 
     if len(tables) != 1:
-        raise "Not in new format"
+        raise OldFormatException()
 
     table = tables[0]
-
 
     count = c.query("SELECT sum(hitcount),sum(d1), sum(d2), sum(d3), sum(d4), sum(d5), sum(d6), sum(d7), sum(d8), sum(d9), sum(d10), sum(d11), sum(d12), sum(d13), sum(d14), sum(d15), sum(d16), sum(d17), sum(d18), sum(d19), sum(d20), sum(d21), sum(d22), sum(d23), sum(d24), sum(d25), sum(d26), sum(d27), sum(d28), sum(d29), sum(d30), sum(d31) FROM "+table+" WHERE page=$page AND project=$project;", vars = {'page' : page, 'project' : proj })
 
@@ -117,13 +123,15 @@ def _getcounts_new(c,date,proj,page):
     # caused this months dates to be offset for one
     # day.
     if date == "200806":
-        i = 0
+        fudge = 0
     else:
-        i = 1
+        fudge = 1
 
-    for x in count[1:]:
-        counts[i]=int(count[0].values()[0])
-        i=i+1
+    values = count[0]
+
+    for x in range(1,32):
+        counts[x-fudge]=int(values["sum(d%d)" % x])
+
 
     return counts
 
