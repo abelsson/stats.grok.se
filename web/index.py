@@ -123,7 +123,6 @@ class notfound:
     def GET(self):
         return web.notfound()
 
-
 class about:
     def GET(self):
         render = web.template.render('templates/')

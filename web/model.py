@@ -31,9 +31,8 @@ def get_top(proj):
     return db.query("SELECT rank,project,page,hitcount FROM top_%s WHERE project='%s' ORDER BY RANK LIMIT 1000" % (config.LATESTTOP, proj))
             
 def get_rank(page,  proj):
-     rank = db.query("SELECT rank FROM top_%s WHERE project='%s' AND page='%s'" % (config.LATESTTOP,proj,page))
-
-     return rank
+    rank = db.query("SELECT rank FROM top_%s WHERE project='%s' AND page='%s'" % (config.LATESTTOP,proj,page))
+    return rank
 
 def get_latest_stats(page, proj):
     ''' Fetch statistics in a list of view counts, for the latest 30 days '''
