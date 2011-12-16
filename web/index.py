@@ -17,6 +17,11 @@
 import urllib
 import datetime
 from time import time
+import sys
+import os
+
+
+sys.path.extend([os.path.dirname(__file__), os.path.join(os.path.dirname(__file__), 'templates')])
 
 import config
 import web
@@ -158,11 +163,9 @@ def project_link(proj):
 
 
 if __name__ == '__main__':
-    app = web.application(urls, globals())
-    
     if config.DEBUG:
+        app = web.application(urls, globals())
         app.run()
-    else:
-        app = web.application(urls, globals(), autoreload=False)
-        application = app.wsgifunc()
+
+application = web.application(urls, globals(), autoreload=False).wsgifunc()
     
