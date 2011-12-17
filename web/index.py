@@ -15,13 +15,13 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import urllib
-import datetime
-from time import time
+#import datetime
+#from time import time
 import sys
 import os
 
 
-sys.path.extend([os.path.dirname(__file__), os.path.join(os.path.dirname(__file__), 'templates')])
+sys.path.extend([os.path.dirname(__file__)]) #, os.path.join(os.path.dirname(__file__), 'templates')])
 
 import config
 import web
@@ -90,7 +90,7 @@ class latest_top(base):
 class index(base):
     def GET(self):
         form =  self.init_form()
-        render = web.template.render(self.template_dir, base='layout')
+        #render = web.template.render(self.template_dir, base='layout')
         return self.render.index(form)
         
     def POST(self): 
@@ -122,7 +122,7 @@ class result(base):
     
     
     def fetch_results(self, proj, date, page):
-        today = datetime.date.today()
+        #today = datetime.date.today()
         page = urllib.unquote(page).strip().replace(" ","_")
 
         rank = model.get_rank(page, proj)
