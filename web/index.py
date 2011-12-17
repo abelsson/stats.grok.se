@@ -40,7 +40,8 @@ urls = (
 class base(object):
     def __init__(self, *args, **kwargs):
         super(base, self).__init__(*args, **kwargs)
-        self.render = web.template.render('templates/', base = 'layout',
+        self.template_dir = os.path.join(os.path.dirname(__file__), 'templates/')
+        self.render = web.template.render(self.template_dir, base = 'layout',
                                           globals = { 'unquote' : urllib.unquote,
                                                       'sum' : sum,
                                                       'project_link' : project_link})
@@ -89,7 +90,7 @@ class latest_top(base):
 class index(base):
     def GET(self):
         form =  self.init_form()
-        render = web.template.render('templates/', base='layout')
+        render = web.template.render(self.template_dir, base='layout')
         return self.render.index(form)
         
     def POST(self): 
