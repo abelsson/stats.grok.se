@@ -13,8 +13,8 @@ class OldFormatException(Exception):
 db = web.database(dbn='mysql', host=config.db_host, user= config.db_user , pw=config.db_password, db='wikistats')
 
 
-def get_dates(start = None):
-    if start == None:
+def get_dates(start=None):
+    if not start:
         start = (2007, 12)
     today = datetime.date.today()
     end = (today.year, today.month)
