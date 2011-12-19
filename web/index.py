@@ -49,21 +49,14 @@ class base(object):
     def init_form(self, proj = None, date = None, page = None):
         years, latest = model.get_dates()
 
-        if proj == None:
-            search = form.Form(
-            form.Dropdown('proj', config.PROJECTS, description=''),
-            form.Dropdown('year', years, value=latest, description=''),
-            form.Textbox('inputbox',form.notnull,id='ib1', description=''),
-            form.Button('Top'))
-        else:
-            search = form.Form(
+        if date == None:
+            date = latest
+            
+        return form.Form(
             form.Dropdown('proj', config.PROJECTS, value=proj, description=''),
             form.Dropdown('year', years, value=date, description=''),
             form.Textbox('inputbox', form.notnull,value=page, id='ib1', description=''),
             form.Button('Top'))
-            
-        return search
-
 
 class notfound:
     def GET(self):
@@ -90,7 +83,6 @@ class latest_top(base):
 class index(base):
     def GET(self):
         form =  self.init_form()
-        #render = web.template.render(self.template_dir, base='layout')
         return self.render.index(form)
         
     def POST(self): 
@@ -122,7 +114,6 @@ class result(base):
     
     
     def fetch_results(self, proj, date, page):
-        #today = datetime.date.today()
         page = urllib.unquote(page).strip().replace(" ","_")
 
         rank = model.get_rank(page, proj)
