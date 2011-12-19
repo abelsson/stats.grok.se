@@ -14,18 +14,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib
-#import datetime
-#from time import time
 import sys
 import os
+import math
+import urllib
+import web
+import json
+from web import form
 
-
-sys.path.extend([os.path.dirname(__file__)]) #, os.path.join(os.path.dirname(__file__), 'templates')])
+sys.path.extend([os.path.dirname(__file__)])
 
 import config
-import web
-from web import form
 import model
 
 urls = (
@@ -34,6 +33,8 @@ urls = (
 '/([a-z.-]*)/([0-9]{6})/(.*)', 'result',
 '/([a-z.-]*)/latest/(.*)', 'latest_result',
 '/([a-z.-]*)/top', 'latest_top',
+'/json/([a-z.-]*)/([0-9]{6})/(.*)', 'json_result',
+'/json/([a-z.-]*)/latest/(.*)', 'json_latest_result',
 '/.*', 'notfound'
 )
 
@@ -44,7 +45,8 @@ class base(object):
         self.render = web.template.render(self.template_dir, base = 'layout',
                                           globals = { 'unquote' : urllib.unquote,
                                                       'sum' : sum,
-                                                      'project_link' : project_link})
+                                                      'project_link' : project_link,
+                                                      'round_magnitude' : round_magnitude})
 
     def init_form(self, proj = None, date = None, page = None):
         years, latest = model.get_dates()
@@ -58,6 +60,9 @@ class base(object):
             form.Textbox('inputbox', form.notnull,value=page, id='ib1', description=''),
             form.Button('Top'))
 
+#
+# 404 page
+#
 class notfound:
     def GET(self):
         return web.notfound()
@@ -135,6 +140,25 @@ class latest_result(result):
         return result.GET(self, proj, 'latest', page)
 
 
+#
+# json support
+#
+class json_result(result):
+    def GET(self,proj=None, date=None, page=None):
+
+        if self.block_scraper():
+            return self.render.blocked()
+
+        counts, rank, execution_time = self.fetch_results(proj, date, page)
+        #web.header('Content-Type', 'application/json')
+        return json.dumps({ "title" : page,
+                            "month" : date,
+                            "daily_views" : counts.values(),
+                            "rank" : rank })
+
+class json_latest_result(json_result):
+    def GET(self,proj=None, page=None):
+        return result.GET(self, proj, 'latest', page)
 
 #
 # Utility functions
@@ -153,6 +177,12 @@ def project_link(proj):
 
     return proj + ".wikipedia.org"
 
+
+def round_magnitude(n):
+    ''' Return a nice and round number, divisible by 6 which is larger than n'''
+    x = n/6.0
+    n = math.ceil(x/(10**math.floor(math.log10(x))))
+    return int(6.0*n*10**math.floor(math.log10(x)))
 
 if __name__ == '__main__':
     if config.DEBUG:

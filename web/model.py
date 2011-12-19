@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+#  Copyright (C) 2011 Henrik Abelsson <henrik@grok.se>
+
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import datetime, time
 import web
 import config
@@ -10,7 +26,9 @@ class OldFormatException(Exception):
         def __str__(self):
             return repr(self.value)
 
-db = web.database(dbn='mysql', host=config.db_host, user= config.db_user , pw=config.db_password, db='wikistats')
+db = web.database(dbn='mysql', host=config.db_host, user= config.db_user , pw=config.db_password, db='wikistats', charset=None)
+
+
 
 
 def get_dates(start = None):
@@ -39,7 +57,10 @@ def get_top(proj):
             
 def get_rank(page,  proj):
     rank = db.query("SELECT rank FROM top_%s WHERE project='%s' AND page='%s'" % (config.LATESTTOP,proj,page))
-    return rank
+    try:
+        return rank[0].rank
+    except IndexError:
+        return -1
 
 def get_latest_stats(page, proj):
     ''' Fetch statistics in a list of view counts, for the latest 30 days '''
@@ -51,16 +72,21 @@ def get_latest_stats(page, proj):
     startd=today-datetime.timedelta(days=30)
     ix = startd
     for i in range(0,31):
-        days[i] = ix.day
+        days[i] = "%d-%02d-%02d" % (ix.year, ix.month, ix.day)
         ix += datetime.timedelta(days=1)
     months = get_dates((startd.year, startd.month))[0]
-    page_counts = []
+    page_counts = {}
     for m in months:
         try:
-            page_counts.extend(_getcounts_new(db,m,proj,page).values())
+            page_counts = dict(page_counts.items() + _getcounts_new(db,m,proj,page).items())
         except:
-            page_counts.extend(_getcounts(db,m,proj,page).values())
-    page_counts = page_counts[-30:]
+            page_counts = dict(page_counts.items() + _getcounts(db,m,proj,page).items())
+
+
+    for x in page_counts.keys():
+        if not x in days:
+            del page_counts[x]
+    #page_counts = page_counts[-30:]
  
     end = time.time()
     execution_time = end-start
@@ -97,7 +123,11 @@ def _getcounts(c,date,proj,page):
     counts = {}
     for day in all_days:
         count = c.query("SELECT sum(hitcount) FROM "+day+" WHERE page=$page AND project=$project;", vars = {'page' : page, 'project' : proj })
-        day = int(day.split("_")[1][-2:])
+        tmp = day.split("_")[1]
+        year = tmp[0:4]
+        month = tmp[4:6]
+        day = tmp[6:]
+        day = year + "-" + month + "-" + day
         try:
             counts[day] = int(count[0].values()[0])
         except TypeError:
@@ -108,16 +138,14 @@ def _getcounts(c,date,proj,page):
 def _getcounts_new(c,date,proj,page):
 
     tables = _getalldays_new(c,date)
-    counts = {}
-    for i in range(0,32):
-        counts[i]=0
 
+    counts = {}
     if len(tables) != 1:
         raise OldFormatException()
 
     table = tables[0]
 
-    count = c.query("SELECT sum(hitcount),sum(d1), sum(d2), sum(d3), sum(d4), sum(d5), sum(d6), sum(d7), sum(d8), sum(d9), sum(d10), sum(d11), sum(d12), sum(d13), sum(d14), sum(d15), sum(d16), sum(d17), sum(d18), sum(d19), sum(d20), sum(d21), sum(d22), sum(d23), sum(d24), sum(d25), sum(d26), sum(d27), sum(d28), sum(d29), sum(d30), sum(d31) FROM "+table+" WHERE page=$page AND project=$project;", vars = {'page' : page, 'project' : proj })
+    count = c.query("SELECT sum(hitcount),sum(d1), sum(d2), sum(d3), sum(d4), sum(d5), sum(d6), sum(d7), sum(d8), sum(d9), sum(d10), sum(d11), sum(d12), sum(d13), sum(d14), sum(d15), sum(d16), sum(d17), sum(d18), sum(d19), sum(d20), sum(d21), sum(d22), sum(d23), sum(d24), sum(d25), sum(d26), sum(d27), sum(d28), sum(d29), sum(d30), sum(d31) FROM "+table+" WHERE page=$page AND project=$project;", vars = {'page' : page.encode('utf-8'), 'project' : proj })
 
     # One time bug in the database generation script
     # caused this months dates to be offset for one
@@ -128,9 +156,10 @@ def _getcounts_new(c,date,proj,page):
         fudge = 1
 
     values = count[0]
-
+    year = date[0:4]
+    month = date[4:6]
     for x in range(1,32):
-        counts[x-fudge]=int(values["sum(d%d)" % x])
+        counts["%s-%s-%02d" % (year, month, x)]=int(values["sum(d%d)" % x])
 
 
     return counts

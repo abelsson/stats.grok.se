@@ -11,7 +11,7 @@ $def with (rows, LATESTTOP)
 	$for i in rows: 
 	<tr>
 		<td>${i.rank}</td>
-		<td><a href="http://stats.grok.se/${i.project}/$LATESTTOP/${i.page}">${unquote(i.page).replace("_"," ")}</a></td>
+		<td><a href="/${i.project}/$LATESTTOP/${i.page}">${unquote(i.page).replace("_"," ")}</a></td>
 		<td>${i.hitcount}</td>
 	</tr>
 
