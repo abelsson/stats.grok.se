@@ -32,9 +32,15 @@ urls = (
 '/about', 'about',
 '/([a-z.-]*)/([0-9]{6})/(.*)', 'result',
 '/([a-z.-]*)/latest/(.*)', 'latest_result',
+'/([a-z.-]*)/latest30/(.*)', 'latest_result',
+'/([a-z.-]*)/latest60/(.*)', 'latest_result_60',
+'/([a-z.-]*)/latest90/(.*)', 'latest_result_90',
 '/([a-z.-]*)/top', 'latest_top',
 '/json/([a-z.-]*)/([0-9]{6})/(.*)', 'json_result',
 '/json/([a-z.-]*)/latest/(.*)', 'json_latest_result',
+'/json/([a-z.-]*)/latest30/(.*)', 'json_latest_result',
+'/json/([a-z.-]*)/latest60/(.*)', 'json_latest_result_60',
+'/json/([a-z.-]*)/latest90/(.*)', 'json_latest_result_90',
 '/.*', 'notfound'
 )
 
@@ -51,6 +57,8 @@ class base(object):
     def init_form(self, proj = None, date = None, page = None):
         years, latest = model.get_dates()
 
+        years.reverse()
+        
         if date == None:
             date = latest
             
@@ -58,6 +66,7 @@ class base(object):
             form.Dropdown('proj', config.PROJECTS, value=proj, description=''),
             form.Dropdown('year', years, value=date, description=''),
             form.Textbox('inputbox', form.notnull,value=page, id='ib1', description=''),
+            form.Button('Go', type="submit", value="Go"),
             form.Button('Top'))
 
 #
@@ -123,8 +132,8 @@ class result(base):
 
         rank = model.get_rank(page, proj)
 
-        if date == 'latest':
-            page_counts, execution_time = model.get_latest_stats(page,proj)
+        if date.startswith('latest'):
+            page_counts, execution_time = model.get_latest_stats(page,proj, int(date[-2:]))
         else:
             page_counts, execution_time = model.get_monthly_stats(page,date,proj)
 
@@ -137,7 +146,15 @@ class result(base):
 #
 class latest_result(result):
     def GET(self,proj=None, page=None):
-        return result.GET(self, proj, 'latest', page)
+        return result.GET(self, proj, 'latest30', page)
+
+class latest_result_60(result):
+    def GET(self,proj=None, page=None):
+        return result.GET(self, proj, 'latest60', page)
+
+class latest_result_90(result):
+    def GET(self,proj=None, page=None):
+        return result.GET(self, proj, 'latest90', page)
 
 
 #
@@ -153,12 +170,22 @@ class json_result(result):
         #web.header('Content-Type', 'application/json')
         return json.dumps({ "title" : page,
                             "month" : date,
-                            "daily_views" : counts.values(),
+                            "daily_views" : counts,
                             "rank" : rank })
 
+    
 class json_latest_result(json_result):
     def GET(self,proj=None, page=None):
-        return result.GET(self, proj, 'latest', page)
+        return json_result.GET(self, proj, 'latest30', page)
+
+class json_latest_result_60(json_result):
+    def GET(self,proj=None, page=None):
+        return json_result.GET(self, proj, 'latest60', page)
+
+class json_latest_result_90(json_result):
+    def GET(self,proj=None, page=None):
+        return json_result.GET(self, proj, 'latest90', page)
+
 
 #
 # Utility functions
@@ -166,6 +193,12 @@ class json_latest_result(json_result):
     
 def project_link(proj):
     ''' Return the dns host name for a given project '''
+    if proj.endswith(".b"):
+        return proj[:-2] + ".wikibooks.org"
+
+    if proj.endswith(".d"):
+        return proj[:-2] + ".wiktionary.org"
+
     if proj.endswith(".s"):
         return proj[:-2] + ".wikisource.org"
 
@@ -174,6 +207,12 @@ def project_link(proj):
 
     if proj.endswith(".m"):
         return proj[:-2] + ".wikimedia.org"
+
+    if proj.endswith(".v"):
+        return proj[:-2] + ".wikiversity.org"
+
+    if proj.endswith(".w"):
+        return proj[:-2] + ".mediawiki.org"
 
     return proj + ".wikipedia.org"
 

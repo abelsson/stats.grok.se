@@ -56,23 +56,25 @@ def get_top(proj):
     return db.query("SELECT rank,project,page,hitcount FROM top_%s WHERE project='%s' ORDER BY RANK LIMIT 1000" % (config.LATESTTOP, proj))
             
 def get_rank(page,  proj):
-    rank = db.query("SELECT rank FROM top_%s WHERE project='%s' AND page='%s'" % (config.LATESTTOP,proj,page))
+    rank = db.query(u"SELECT rank FROM top_%s WHERE project=$proj AND page=$page" % config.LATESTTOP, vars = {"proj" : proj, "page" : page.encode("utf-8")})
+    
     try:
         return rank[0].rank
     except IndexError:
         return -1
 
-def get_latest_stats(page, proj):
+def get_latest_stats(page, proj, num_days = 30):
     ''' Fetch statistics in a list of view counts, for the latest 30 days '''
     start = time.time()
     
-    days = range(1,32)
+    days = []
     today = datetime.date.today()
         
-    startd=today-datetime.timedelta(days=30)
+    startd=today-datetime.timedelta(days=num_days)
     ix = startd
-    for i in range(0,31):
-        days[i] = "%d-%02d-%02d" % (ix.year, ix.month, ix.day)
+    
+    for i in range(0,num_days+1):
+        days.append("%d-%02d-%02d" % (ix.year, ix.month, ix.day))
         ix += datetime.timedelta(days=1)
     months = get_dates((startd.year, startd.month))[0]
     page_counts = {}
@@ -122,7 +124,7 @@ def _getcounts(c,date,proj,page):
     all_days = _getalldays(c,date)
     counts = {}
     for day in all_days:
-        count = c.query("SELECT sum(hitcount) FROM "+day+" WHERE page=$page AND project=$project;", vars = {'page' : page, 'project' : proj })
+        count = c.query("SELECT sum(hitcount) FROM "+day+" WHERE page=$page AND project=$project;", vars = {'page' : page.encode("utf-8"), 'project' : proj })
         tmp = day.split("_")[1]
         year = tmp[0:4]
         month = tmp[4:6]
@@ -159,8 +161,10 @@ def _getcounts_new(c,date,proj,page):
     year = date[0:4]
     month = date[4:6]
     for x in range(1,32):
-        counts["%s-%s-%02d" % (year, month, x)]=int(values["sum(d%d)" % x])
-
+        try:
+            counts["%s-%s-%02d" % (year, month, x)]=int(values["sum(d%d)" % x])
+        except TypeError:
+            counts["%s-%s-%02d" % (year, month, x)]=0
 
     return counts
 

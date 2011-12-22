@@ -7,8 +7,8 @@ $ link = project_link(proj)
 <!--  urllib.quote_plus(page) -->
 <p><a href="http://$link/wiki/$page">$page</a> has been viewed $total
 
-$if date == 'latest':
-     times in the last 30 days.
+$if date.startswith('latest'):
+     times in the last ${date[-2:]} days.
 $else:
      times in $date.
      
@@ -19,20 +19,31 @@ $if rank > 0:
 
 </p>
 
-<div id="chartdiv" style="height:400px;width:800px; "></div>
+<div style="width:770px;text-align:right;font-size:0.8em ">
+latest
+<a href="/${proj}/latest30/$page">30</a>
+<a href="/${proj}/latest60/$page">60</a>
+<a href="/${proj}/latest90/$page">90</a>
+days</div>
+<div id="chartdiv" style="margin-left: 10px; height:400px;width:800px; "></div>
 
 <form method="post" action="/">
 $for input in form.inputs:
     $:input.render()
-
-<input type="submit" value="Go"/>
 </form>
 
 $ values = [[a.encode("ascii") + " 10 AM",b] for a,b in counts.items()]
 $ days = [x[0] for x in values]
 $ days.sort()
 $ first_day = days[0].split()[0]
-$ last_day = days[-1].split()[0]
+
+
+$if date.startswith('latest'):
+    $ last_day = days[-1].split()[0]
+$else:
+    $ last_day = days[0][0:7]+"-31"
+
+
 <script class="code" type="text/javascript">
 $$(document).ready(function(){
 
@@ -63,7 +74,7 @@ $$(document).ready(function(){
         // options for each axis are specified in seperate option objects.
         xaxis: {
           renderer:$$.jqplot.DateAxisRenderer,
-          tickOptions:{formatString:'%b %#d, %y'},
+          tickOptions:{formatString:'%Y-%m-%d'},
           label: "Date",
           min: '${first_day}',
           max: '${last_day} 14 PM',
@@ -91,4 +102,4 @@ $$(document).ready(function(){
 <a class="FlattrButton" style="display:none;" rev="flattr" href="http://stats.grok.se"></a>
 </div>
 
-<p style="font-size: 0.6em">(took $render_time sec)</p>
+<p style="font-size: 0.6em"> <a href="/json/${proj}/$date/$page">This page in json format.</a> (took $render_time sec)</p>
