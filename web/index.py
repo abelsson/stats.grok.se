@@ -14,18 +14,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib
-#import datetime
-#from time import time
 import sys
 import os
+import math
+import urllib
+import web
+import json
+from web import form
 
-
-sys.path.extend([os.path.dirname(__file__)]) #, os.path.join(os.path.dirname(__file__), 'templates')])
+sys.path.extend([os.path.dirname(__file__)])
 
 import config
-import web
-from web import form
 import model
 
 urls = (
@@ -33,7 +32,15 @@ urls = (
 '/about', 'about',
 '/([a-z.-]*)/([0-9]{6})/(.*)', 'result',
 '/([a-z.-]*)/latest/(.*)', 'latest_result',
+'/([a-z.-]*)/latest30/(.*)', 'latest_result',
+'/([a-z.-]*)/latest60/(.*)', 'latest_result_60',
+'/([a-z.-]*)/latest90/(.*)', 'latest_result_90',
 '/([a-z.-]*)/top', 'latest_top',
+'/json/([a-z.-]*)/([0-9]{6})/(.*)', 'json_result',
+'/json/([a-z.-]*)/latest/(.*)', 'json_latest_result',
+'/json/([a-z.-]*)/latest30/(.*)', 'json_latest_result',
+'/json/([a-z.-]*)/latest60/(.*)', 'json_latest_result_60',
+'/json/([a-z.-]*)/latest90/(.*)', 'json_latest_result_90',
 '/.*', 'notfound'
 )
 
@@ -44,27 +51,27 @@ class base(object):
         self.render = web.template.render(self.template_dir, base = 'layout',
                                           globals = { 'unquote' : urllib.unquote,
                                                       'sum' : sum,
-                                                      'project_link' : project_link})
+                                                      'project_link' : project_link,
+                                                      'round_magnitude' : round_magnitude})
 
     def init_form(self, proj = None, date = None, page = None):
         years, latest = model.get_dates()
 
-        if proj == None:
-            search = form.Form(
-            form.Dropdown('proj', config.PROJECTS, description=''),
-            form.Dropdown('year', years, value=latest, description=''),
-            form.Textbox('inputbox',form.notnull,id='ib1', description=''),
-            form.Button('Top'))
-        else:
-            search = form.Form(
+        years.reverse()
+        
+        if date == None:
+            date = latest
+            
+        return form.Form(
             form.Dropdown('proj', config.PROJECTS, value=proj, description=''),
             form.Dropdown('year', years, value=date, description=''),
             form.Textbox('inputbox', form.notnull,value=page, id='ib1', description=''),
+            form.Button('Go', type="submit", value="Go"),
             form.Button('Top'))
-            
-        return search
 
-
+#
+# 404 page
+#
 class notfound:
     def GET(self):
         return web.notfound()
@@ -90,7 +97,6 @@ class latest_top(base):
 class index(base):
     def GET(self):
         form =  self.init_form()
-        #render = web.template.render(self.template_dir, base='layout')
         return self.render.index(form)
         
     def POST(self): 
@@ -122,13 +128,12 @@ class result(base):
     
     
     def fetch_results(self, proj, date, page):
-        #today = datetime.date.today()
         page = urllib.unquote(page).strip().replace(" ","_")
 
         rank = model.get_rank(page, proj)
 
-        if date == 'latest':
-            page_counts, execution_time = model.get_latest_stats(page,proj)
+        if date.startswith('latest'):
+            page_counts, execution_time = model.get_latest_stats(page,proj, int(date[-2:]))
         else:
             page_counts, execution_time = model.get_monthly_stats(page,date,proj)
 
@@ -141,8 +146,45 @@ class result(base):
 #
 class latest_result(result):
     def GET(self,proj=None, page=None):
-        return result.GET(self, proj, 'latest', page)
+        return result.GET(self, proj, 'latest30', page)
 
+class latest_result_60(result):
+    def GET(self,proj=None, page=None):
+        return result.GET(self, proj, 'latest60', page)
+
+class latest_result_90(result):
+    def GET(self,proj=None, page=None):
+        return result.GET(self, proj, 'latest90', page)
+
+
+#
+# json support
+#
+class json_result(result):
+    def GET(self,proj=None, date=None, page=None):
+
+        if self.block_scraper():
+            return self.render.blocked()
+
+        counts, rank, execution_time = self.fetch_results(proj, date, page)
+        #web.header('Content-Type', 'application/json')
+        return json.dumps({ "title" : page,
+                            "month" : date,
+                            "daily_views" : counts,
+                            "rank" : rank })
+
+    
+class json_latest_result(json_result):
+    def GET(self,proj=None, page=None):
+        return json_result.GET(self, proj, 'latest30', page)
+
+class json_latest_result_60(json_result):
+    def GET(self,proj=None, page=None):
+        return json_result.GET(self, proj, 'latest60', page)
+
+class json_latest_result_90(json_result):
+    def GET(self,proj=None, page=None):
+        return json_result.GET(self, proj, 'latest90', page)
 
 
 #
@@ -151,6 +193,12 @@ class latest_result(result):
     
 def project_link(proj):
     ''' Return the dns host name for a given project '''
+    if proj.endswith(".b"):
+        return proj[:-2] + ".wikibooks.org"
+
+    if proj.endswith(".d"):
+        return proj[:-2] + ".wiktionary.org"
+
     if proj.endswith(".s"):
         return proj[:-2] + ".wikisource.org"
 
@@ -160,8 +208,20 @@ def project_link(proj):
     if proj.endswith(".m"):
         return proj[:-2] + ".wikimedia.org"
 
+    if proj.endswith(".v"):
+        return proj[:-2] + ".wikiversity.org"
+
+    if proj.endswith(".w"):
+        return proj[:-2] + ".mediawiki.org"
+
     return proj + ".wikipedia.org"
 
+
+def round_magnitude(n):
+    ''' Return a nice and round number, divisible by 6 which is larger than n'''
+    x = n/6.0
+    n = math.ceil(x/(10**math.floor(math.log10(x))))
+    return int(6.0*n*10**math.floor(math.log10(x)))
 
 if __name__ == '__main__':
     if config.DEBUG:

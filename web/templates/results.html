@@ -7,53 +7,99 @@ $ link = project_link(proj)
 <!--  urllib.quote_plus(page) -->
 <p><a href="http://$link/wiki/$page">$page</a> has been viewed $total
 
-$if date == -1:
-     times in the last 30 days.
+$if date.startswith('latest'):
+     times in the last ${date[-2:]} days.
 $else:
      times in $date.
      
 $if rank > 0:
-     This article ranked $rank in traffic on $proj.
+     This article ranked $rank in traffic on $link.
 
-   
+
+
 </p>
-<ul id="q-graph">
-	$code:
-		x_offset = 0 
 
-		def humround(n):
-		    if n < 1000:
-		        return "%.0f" % n
-		    if n < 1000000:
-		        return "%.1fk" % (n/1000.0)
-		    if n < 1000000000:
-		        return "%.1fM" % (n/1000000.0)
-
-	$for i in range(1,32):
-		<li class="qtr" style="width: 25px; left: ${(i-1)*20}px;">$i</li>
-
-		$ count = int(counts.get(i,0))
-		<li class="sent bar" style="height:${(count/max_count)*280}px; left: ${x_offset}px;">
-			<p	style="margin-left: -3px;">${humround(count)}</p>
-		</li>
-		$ x_offset += 20
-
-	<li id="ticks">
-	$for i in range(5,0,-1): 
-		<div class="tick" style="height: 59px;">
-			$ x = (max_count/5*i)*1.071
-			<p>${humround(x)}</p>
-		</div>
-	</li>
-</ul>
+<div style="width:770px;text-align:right;font-size:0.8em ">
+latest
+<a href="/${proj}/latest30/$page">30</a>
+<a href="/${proj}/latest60/$page">60</a>
+<a href="/${proj}/latest90/$page">90</a>
+days</div>
+<div id="chartdiv" style="margin-left: 10px; height:400px;width:800px; "></div>
 
 <form method="post" action="/">
-$:form.render()
-<input type="submit" value="Go"/>
+$for input in form.inputs:
+    $:input.render()
 </form>
 
+$ values = [[a.encode("ascii") + " 10 AM",b] for a,b in counts.items()]
+$ days = [x[0] for x in values]
+$ days.sort()
+$ first_day = days[0].split()[0]
+
+
+$if date.startswith('latest'):
+    $ last_day = days[-1].split()[0]
+$else:
+    $ last_day = days[0][0:7]+"-31"
+
+
+<script class="code" type="text/javascript">
+$$(document).ready(function(){
+
+  line1 = $:values;
+  var plot1 = $$.jqplot ('chartdiv', [line1], {
+      seriesColors: [ "#909AA9" ],
+      // Give the plot a title.
+      // You can specify options for all axes on the plot at once with
+      // the axesDefaults object.  Here, we're using a canvas renderer
+      // to draw the axis label which allows rotated text.
+      axesDefaults: {
+        labelRenderer: $$.jqplot.CanvasAxisLabelRenderer
+      },
+      seriesDefaults : {
+          yaxis: 'y2axis',
+          markerOptions: { style:"circle", size:8 },
+          renderer:$$.jqplot.BarRenderer,
+          rendererOptions: { barWidth: 10},
+
+          trendline: {
+            show: true
+          }
+      }, 
+      // An axes object holds options for all axes.
+      // Allowable axes are xaxis, x2axis, yaxis, y2axis, y3axis, ...
+      // Up to 9 y axes are supported.
+      axes: {
+        // options for each axis are specified in seperate option objects.
+        xaxis: {
+          renderer:$$.jqplot.DateAxisRenderer,
+          tickOptions:{formatString:'%Y-%m-%d'},
+          label: "Date",
+          min: '${first_day}',
+          max: '${last_day} 14 PM',
+        },
+        y2axis: {
+          label: "",
+          min: 0,
+          max: ${round_magnitude(max_count)}
+        }
+      }, 
+      highlighter: {
+        show: true
+      },
+      grid: {
+        background: "#ffffff"
+      }
+  });
+
+});
+
+</script>
+
+
 <div style="float: right">
-<a class="FlattrButton" style="display:none;" rev="flattr;button:compact;" href="http://stats.grok.se"></a>
+<a class="FlattrButton" style="display:none;" rev="flattr" href="http://stats.grok.se"></a>
 </div>
 
-<p style="font-size: 0.6em">(took $render_time sec)</p>
+<p style="font-size: 0.6em"> <a href="/json/${proj}/$date/$page">This page in json format.</a> (took $render_time sec)</p>

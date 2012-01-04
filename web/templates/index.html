@@ -22,8 +22,8 @@ $def with (form)
 		<p>
 			Enter a wikipedia article title and press Go<br />
 
-			$:form.render()
-			<input type="submit" value="Go"/>
+			$for input in form.inputs:
+			    $:input.render()
 		</p>
 	</form>
 </div>
