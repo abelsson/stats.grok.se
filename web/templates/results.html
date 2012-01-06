@@ -1,9 +1,9 @@
 $def with (counts, page, proj, date, rank, render_time, form)
 
 $try:    
- 	total = sum(counts.values())
+ 	$total = sum(counts.values())
 $except ValueError:
- 	total = 'unknown times'
+ 	$total = 'unknown times'
 $ max_count = max(float(max(counts.values())), 1)
 $ link = project_link(proj)
 
