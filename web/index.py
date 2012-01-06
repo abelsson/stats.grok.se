@@ -120,8 +120,8 @@ class result(base):
 
         form = self.init_form(proj, date, page)
 
-        counts, rank, execution_time = self.fetch_results(proj, date, page)
-        return self.render.results(counts, page, proj, date, rank, execution_time, form)
+        counts, rank, total, execution_time = self.fetch_results(proj, date, page)
+        return self.render.results(counts, page, proj, date, rank, execution_time, form, total)
 
     def block_scraper(self):
         return web.ctx['ip'] in config.blocked_users    
@@ -136,8 +136,12 @@ class result(base):
             page_counts, execution_time = model.get_latest_stats(page,proj, int(date[-2:]))
         else:
             page_counts, execution_time = model.get_monthly_stats(page,date,proj)
-
-        return page_counts, rank, execution_time
+        
+        try:    
+            total = sum(page_counts.values())
+        except ValueError:
+            total =  "unknown times"
+        return page_counts, rank, total, execution_time
 
 #
 # Statistics for a single page for the latest 30 days
