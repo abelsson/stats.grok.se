@@ -1,6 +1,9 @@
 $def with (counts, page, proj, date, rank, render_time, form)
-    
-$ total = sum(counts.values())
+
+$ try:    
+  total = sum(counts.values())
+$ except ValueError:
+  total = 'unknown times's
 $ max_count = max(float(max(counts.values())), 1)
 $ link = project_link(proj)
 
