@@ -170,7 +170,7 @@ class json_result(result):
         if self.block_scraper():
             return self.render.blocked()
 
-        counts, rank, execution_time = self.fetch_results(proj, date, page)
+        counts, rank, total, execution_time = self.fetch_results(proj, date, page)
         #web.header('Content-Type', 'application/json')
         return json.dumps({ "title" : page,
                             "month" : date,
