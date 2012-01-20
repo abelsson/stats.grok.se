@@ -33,7 +33,7 @@ $for input in form.inputs:
 </form>
 
 $ values = ["%s,%s\n" % (a,b) for a,b in counts.items()]
-$ values = '+'.join($values)
+$ data = '+'.join(values)
 $ days = [x[0] for x in values]
 $ days.sort()
 $ first_day = days[0].split()[0]
@@ -49,7 +49,7 @@ $else:
 $$(document).ready(function(){
 	
 	function data() {
-  		return $:values;
+  		return $:data;
 	}
 	
 	 g = new Dygraph(
