@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7; IE=EmulateIE9">
+    <title>two series</title>
+    <!--if IE>
+    <script type="text/javascript" src="static/js/excanvas.js"></script>
+    <!endif-->
+    
+    <script type="text/javascript" src="static/dygraphs/dygraphs-combined.js"></script>
+    <!--  <script type="text/javascript" src="data.js"></script>-->
+	
+	<script>
+	function data() {
+  		data = "2012-01-01,243\n" + "2012-01-02,344\n" + "2012-01-03,297\n" + "2012-01-04,365\n" + "2012-01-05,358\n" + "2012-01-06,366\n" + "2012-01-07,335\n" + "2012-01-08,367\n" + "2012-01-09,428\n" + "2012-01-10,405\n" + "2012-01-11,418";
+		return data;
+	}
+	</script>
+  </head>
+  <body>
+    <p>No rollup:</p>
+    <div id="div_g" style="width:600px; height:300px;"></div>
+    <p>30-Day Rollup:</p>
+    <div id="div_g30" style="width:600px; height:300px;"></div>
+
+    <script type="text/javascript">
+      g = new Dygraph(
+            document.getElementById("div_g"),
+            data, {}
+          );
+      g30 = new Dygraph(
+            document.getElementById("div_g"),
+            data, {
+              rollPeriod: 30
+            }
+          );
+    </script>
+  </body>
+</html>

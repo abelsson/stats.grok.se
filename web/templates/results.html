@@ -32,7 +32,8 @@ $for input in form.inputs:
     $:input.render()
 </form>
 
-$ values = [[a.encode("ascii") + " 10 AM",b] for a,b in counts.items()]
+$ values = ['%s,%s\n' % (a.encode("ascii"),b) for a,b in counts.items()]
+$ values
 $ days = [x[0] for x in values]
 $ days.sort()
 $ first_day = days[0].split()[0]
@@ -46,54 +47,16 @@ $else:
 
 <script class="code" type="text/javascript">
 $$(document).ready(function(){
-
-  line1 = $:values;
-  var plot1 = $$.jqplot ('chartdiv', [line1], {
-      seriesColors: [ "#909AA9" ],
-      // Give the plot a title.
-      // You can specify options for all axes on the plot at once with
-      // the axesDefaults object.  Here, we're using a canvas renderer
-      // to draw the axis label which allows rotated text.
-      axesDefaults: {
-        labelRenderer: $$.jqplot.CanvasAxisLabelRenderer
-      },
-      seriesDefaults : {
-          yaxis: 'y2axis',
-          markerOptions: { style:"circle", size:8 },
-          renderer:$$.jqplot.BarRenderer,
-          rendererOptions: { barWidth: 10},
-
-          trendline: {
-            show: true
-          }
-      }, 
-      // An axes object holds options for all axes.
-      // Allowable axes are xaxis, x2axis, yaxis, y2axis, y3axis, ...
-      // Up to 9 y axes are supported.
-      axes: {
-        // options for each axis are specified in seperate option objects.
-        xaxis: {
-          renderer:$$.jqplot.DateAxisRenderer,
-          tickOptions:{formatString:'%Y-%m-%d'},
-          label: "Date",
-          min: '${first_day}',
-          max: '${last_day} 14 PM',
-        },
-        y2axis: {
-          label: "",
-          min: 0,
-          max: ${round_magnitude(max_count)}
-        }
-      }, 
-      highlighter: {
-        show: true
-      },
-      grid: {
-        background: "#ffffff"
-      }
-  });
-
-});
+	
+	function data() {
+  		data = $:values;
+		return data;
+	}
+	
+	 g = new Dygraph(
+	         document.getElementById("chartdiv"),
+	            data, {}
+	  );
 
 </script>
 
