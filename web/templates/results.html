@@ -32,7 +32,7 @@ $for input in form.inputs:
     $:input.render()
 </form>
 
-$ values = ["%s,%s\n" % (a,b) for a,b in counts.items()]
+$ values = ['"%s,%s\\n"' % (a,b) for a,b in counts.items()]
 $ data = '+'.join(values)
 $ days = [x[0] for x in values]
 $ days.sort()
