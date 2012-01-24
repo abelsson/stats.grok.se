@@ -25,5 +25,19 @@ class DataModel:
 #    
         latest = "%d%02d" % end
         return ret, latest
+    
+    def get_top(self,proj):
+        '''Return the x most viewed pages'''
+        return
+    
+    def get_rank(self,page,  proj):
+        return
+    
+    def get_latest_stats(self,page, proj):
+        return
+    
+    def get_monthly_stats(self,page, date, proj):
+        ''' Fetch statistics as a list of view counts, for a given month'''
+        return
 
 dm =DataModel()

@@ -5,7 +5,6 @@ from abc import ABCMeta, abstractmethod
 class AbstractDataModel:
     __metaclass__ = ABCMeta
     
-    @abstractmethod
     def get_dates(self,start = None):
         if not start:
             start = (2007, 12)
