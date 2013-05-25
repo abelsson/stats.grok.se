@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import sys, time
 import os
 import math
 import urllib
@@ -41,6 +41,12 @@ urls = (
 '/json/([a-z.-]*)/latest30/(.*)', 'json_latest_result',
 '/json/([a-z.-]*)/latest60/(.*)', 'json_latest_result_60',
 '/json/([a-z.-]*)/latest90/(.*)', 'json_latest_result_90',
+'/jsonp/([a-z.-]*)/([0-9]{6})/(.*)', 'jsonp_result',
+'/jsonp/([a-z.-]*)/latest/(.*)', 'jsonp_latest_result',
+'/jsonp/([a-z.-]*)/latest30/(.*)', 'jsonp_latest_result',
+'/jsonp/([a-z.-]*)/latest60/(.*)', 'jsonp_latest_result_60',
+'/jsonp/([a-z.-]*)/latest90/(.*)', 'jsonp_latest_result_90',
+#'/.*', 'overload'
 '/.*', 'notfound'
 )
 
@@ -52,6 +58,7 @@ class base(object):
                                           globals = { 'unquote' : urllib.unquote,
                                                       'sum' : sum,
                                                       'project_link' : project_link,
+                                                      'project_name' : project_name,
                                                       'round_magnitude' : round_magnitude})
 
     def init_form(self, proj = None, date = None, page = None):
@@ -75,7 +82,7 @@ class base(object):
 class notfound:
     def GET(self):
         return web.notfound()
-    
+
 #
 # About page
 #
@@ -83,6 +90,10 @@ class about(base):
     def GET(self):
         return self.render.about()
 
+class overload(base):
+    def GET(self):
+        return self.render.overload()
+    
 #
 # Top 1000 viewed articles page
 #
@@ -116,16 +127,22 @@ class result(base):
     def GET(self,proj=None, date=None, page=None):
 
         if self.block_scraper():
-            return self.render.blocked()
+            raise web.HTTPError("429 Too Many Requests",
+                                {'content-type':'text/html'},
+                                 "Too many requests, please limit your service to 1-2 requests per second and contact User:Henrik on wikipedia to be unblocked")
+        
+
 
         form = self.init_form(proj, date, page)
-
         counts, rank, execution_time = self.fetch_results(proj, date, page)
-        return self.render.results(counts, page, proj, date, rank, execution_time, form)
+	
+	return self.render.results(counts, page, proj, date, rank, execution_time, form)
 
     def block_scraper(self):
         return web.ctx['ip'] in config.blocked_users    
     
+    def slowed_user(self):
+        return web.ctx['ip'] in config.slowed_users    
     
     def fetch_results(self, proj, date, page):
         page = urllib.unquote(page).strip().replace(" ","_")
@@ -164,14 +181,21 @@ class json_result(result):
     def GET(self,proj=None, date=None, page=None):
 
         if self.block_scraper():
-            return self.render.blocked()
+            raise web.HTTPError("429 Too Many Requests",
+                                {'content-type':'text/html'},
+                                 "Too many requests, please limit your service to 1-2 requests per second and contact User:Henrik on wikipedia to be unblocked")
+
+        if self.slowed_user():
+            time.sleep(10)
 
         counts, rank, execution_time = self.fetch_results(proj, date, page)
+        
         #web.header('Content-Type', 'application/json')
         return json.dumps({ "title" : page,
                             "month" : date,
                             "daily_views" : counts,
-                            "rank" : rank })
+                            "rank" : rank,
+                            "project" : proj })
 
     
 class json_latest_result(json_result):
@@ -187,6 +211,43 @@ class json_latest_result_90(json_result):
         return json_result.GET(self, proj, 'latest90', page)
 
 
+#
+# jsonp support
+#
+class jsonp_result(result):
+    def GET(self,proj=None, date=None, page=None):
+
+        if True or self.block_scraper():
+            raise web.HTTPError("429 Too Many Requests",
+                                {'content-type':'text/html'},
+                                 "Too many requests, please limit your service to 1-2 requests per second and contact User:Henrik on wikipedia to be unblocked")
+ 
+        if self.slowed_user():
+            time.sleep(10)
+        counts, rank, execution_time = self.fetch_results(proj, date, page)
+        
+        web.header('Content-Type', 'application/javascript')
+        
+        return "pageviewsCallback( " + json.dumps({ "title" : page,
+                                                    "month" : date,
+                                                    "daily_views" : counts,
+                                                    "rank" : rank,
+                                                    "project": proj }) + ");"
+
+    
+class jsonp_latest_result(jsonp_result):
+    def GET(self,proj=None, page=None):
+        return jsonp_result.GET(self, proj, 'latest30', page)
+
+class jsonp_latest_result_60(jsonp_result):
+    def GET(self,proj=None, page=None):
+        return jsonp_result.GET(self, proj, 'latest60', page)
+
+class jsonp_latest_result_90(jsonp_result):
+    def GET(self,proj=None, page=None):
+        return jsonp_result.GET(self, proj, 'latest90', page)
+
+    
 #
 # Utility functions
 #
@@ -214,9 +275,39 @@ def project_link(proj):
     if proj.endswith(".w"):
         return proj[:-2] + ".mediawiki.org"
 
+    if proj.endswith(".q"):
+        return proj[:-2] + ".wikiquote.org"
+
     return proj + ".wikipedia.org"
 
+def project_name(proj):
+    ''' Return the dns host name for a given project '''
+    if proj.endswith(".b"):
+        return "Wikibooks"
 
+    if proj.endswith(".d"):
+        return "Wiktionary"
+
+    if proj.endswith(".s"):
+        return "Wikisource"
+
+    if proj.endswith(".n"):
+        return "Wikinews"
+
+    if proj.endswith(".m"):
+        return "Wikimedia"
+
+    if proj.endswith(".v"):
+        return "Wikiversity"
+
+    if proj.endswith(".w"):
+        return "Mediawiki"
+
+    if proj.endswith(".q"):
+        return "Wikiquote"
+
+    return "Wikipedia"
+    
 def round_magnitude(n):
     ''' Return a nice and round number, divisible by 6 which is larger than n'''
     x = n/6.0

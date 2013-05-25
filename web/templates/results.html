@@ -2,7 +2,11 @@ $def with (counts, page, proj, date, rank, render_time, form)
     
 $ total = sum(counts.values())
 $ max_count = max(float(max(counts.values())), 1)
+$ name = project_name(proj)
 $ link = project_link(proj)
+
+<h1>$name article traffic statistics</h1>
+<hr style="width:500px; border: 0px; border-top: 1px dotted grey; margin-left:0px">
 
 <!--  urllib.quote_plus(page) -->
 <p><a href="http://$link/wiki/$page">$page</a> has been viewed $total
@@ -24,8 +28,13 @@ latest
 <a href="/${proj}/latest30/$page">30</a>
 <a href="/${proj}/latest60/$page">60</a>
 <a href="/${proj}/latest90/$page">90</a>
-days</div>
+days
+</div>
 <div id="chartdiv" style="margin-left: 10px; height:400px;width:800px; "></div>
+
+<div style="width:770px;text-align:right;font-size:0.8em ">
+<a href="#" onClick="plot1.destroy(); options1.seriesDefaults.pointLabels.show=!options1.seriesDefaults.pointLabels.show; plot1 = $$.jqplot ('chartdiv', [line1], options1);">toggle labels</a>
+</div>
 
 <form method="post" action="/">
 $for input in form.inputs:
@@ -48,21 +57,24 @@ $else:
 $$(document).ready(function(){
 
   line1 = $:values;
-  var plot1 = $$.jqplot ('chartdiv', [line1], {
+  options1 = {
       seriesColors: [ "#909AA9" ],
       // Give the plot a title.
       // You can specify options for all axes on the plot at once with
       // the axesDefaults object.  Here, we're using a canvas renderer
       // to draw the axis label which allows rotated text.
       axesDefaults: {
-        labelRenderer: $$.jqplot.CanvasAxisLabelRenderer
+        labelRenderer: $$.jqplot.CanvasAxisLabelRenderer,
+        tickOptions: {
+           textColor: "#000000"
+        }
       },
       seriesDefaults : {
           yaxis: 'y2axis',
           markerOptions: { style:"circle", size:8 },
           renderer:$$.jqplot.BarRenderer,
           rendererOptions: { barWidth: 10},
-
+          pointLabels: { show: false, location: 'n', edgeTolerance: -15 },
           trendline: {
             show: true
           }
@@ -91,7 +103,8 @@ $$(document).ready(function(){
       grid: {
         background: "#ffffff"
       }
-  });
+  };
+  plot1 = $$.jqplot ('chartdiv', [line1], options1);
 
 });
 

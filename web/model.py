@@ -17,7 +17,8 @@
 import datetime, time
 import web
 import config
-
+import chardet
+from collections import namedtuple
 
 class OldFormatException(Exception):
     def __init__(self, value = "Old format"):
@@ -53,7 +54,19 @@ def get_dates(start = None):
 
 
 def get_top(proj):
-    return db.query("SELECT rank,project,page,hitcount FROM top_%s WHERE project='%s' ORDER BY RANK LIMIT 1000" % (config.LATESTTOP, proj))
+    Entry = namedtuple('Entry','rank project page hitcount');
+    tops = [] 
+    vals = db.query("SELECT rank,project,page,hitcount FROM top_%s WHERE project='%s' ORDER BY RANK LIMIT 1000" % (config.LATESTTOP, proj))
+    for v in vals:
+        try:            
+            page = ''.join(chr(ord(c)) for c in v.page).decode('utf-8')
+        except UnicodeDecodeError:
+            page = v.page.decode('iso-8859-1').encode("utf-8")
+        except IndexError or UnicodeDecodeError:
+            page = page.decode(chardet.detect(v.page)['encoding']).encode('utf-8')
+        tops.append(Entry(v.rank, v.project, page, v.hitcount))
+
+    return tops
             
 def get_rank(page,  proj):
     rank = db.query(u"SELECT rank FROM top_%s WHERE project=$proj AND page=$page" % config.LATESTTOP, vars = {"proj" : proj, "page" : page.encode("utf-8")})
